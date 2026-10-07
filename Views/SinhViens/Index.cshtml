@@ -17,11 +17,13 @@
         </a>
     </p>
 
-    <table class="table table-bordered table-striped">
+
+    <table class="table table-bordered table-striped align-middle">
 
         <thead class="table-dark">
             <tr>
                 <th>Mã SV</th>
+                <th>Hình ảnh</th>
                 <th>Họ tên</th>
                 <th>Ngày sinh</th>
                 <th>Giới tính</th>
@@ -32,28 +34,67 @@
             </tr>
         </thead>
 
+
         <tbody>
 
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@item.MaSV</td>
 
-                    <td>@item.HoTen</td>
+                    <td>
+                        @item.MaSV
+                    </td>
+
+
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.HinhAnh))
+                        {
+                            <img src="~/images/students/@item.HinhAnh"
+                                 width="80"
+                                 height="80"
+                                 style="object-fit:cover;"
+                                 class="rounded border"
+                                 alt="@item.HoTen" />
+                        }
+                        else
+                        {
+                            <span>Chưa có ảnh</span>
+                        }
+                    </td>
+
+
+                    <td>
+                        @item.HoTen
+                    </td>
+
 
                     <td>
                         @item.NgaySinh.ToString("dd/MM/yyyy")
                     </td>
 
-                    <td>@item.GioiTinh</td>
-
-                    <td>@item.Lop</td>
-
-                    <td>@item.Email</td>
-
-                    <td>@item.DiemTrungBinh</td>
 
                     <td>
+                        @item.GioiTinh
+                    </td>
+
+
+                    <td>
+                        @item.Lop
+                    </td>
+
+
+                    <td>
+                        @item.Email
+                    </td>
+
+
+                    <td>
+                        @item.DiemTrungBinh
+                    </td>
+
+
+                    <td>
+
                         <a asp-action="Edit"
                            asp-route-id="@item.MaSV"
                            class="btn btn-warning btn-sm">
@@ -71,12 +112,14 @@
                            class="btn btn-danger btn-sm">
                             Xóa
                         </a>
+
                     </td>
 
                 </tr>
             }
 
         </tbody>
+
     </table>
 
 </div>

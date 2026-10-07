@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuanLySinhVienORM.Data;
+using QuanLySinhVienORM.Middlewares;
 
 namespace QuanLySinhVienORM
 {
@@ -31,6 +32,8 @@ namespace QuanLySinhVienORM
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.MapControllerRoute(
                 name: "default",

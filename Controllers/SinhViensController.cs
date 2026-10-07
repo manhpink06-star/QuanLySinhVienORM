@@ -1,150 +1,361 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using QuanLySinhVienORM.Models;
 using QuanLySinhVienORM.Data;
+using QuanLySinhVienORM.Models;
 
-public class SinhViensController : Controller
+namespace QuanLySinhVienORM.Controllers
 {
-    private readonly ApplicationDbContext _context;
-
-    public SinhViensController(ApplicationDbContext context)
+    public class SinhViensController : Controller
     {
-        _context = context;
-    }
+        private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-    // GET: SINHVIENS
-    public async Task<IActionResult> Index()    
-    {
-        return View(await _context.SinhViens.ToListAsync());
-    }
-
-    // GET: SINHVIENS/Details/5
-    public async Task<IActionResult> Details(int? masv)
-    {
-        if (masv == null)
+        public SinhViensController(
+            ApplicationDbContext context,
+            IWebHostEnvironment webHostEnvironment)
         {
-            return NotFound();
+            _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        var sinhvien = await _context.SinhViens
-            .FirstOrDefaultAsync(m => m.MaSV == masv);
-        if (sinhvien == null)
+        // =====================================================
+        // DANH SÁCH SINH VIÊN
+        // =====================================================
+        public async Task<IActionResult> Index()
         {
-            return NotFound();
+            return View(await _context.SinhViens.ToListAsync());
         }
 
-        return View(sinhvien);
-    }
-
-    // GET: SINHVIENS/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    // POST: SINHVIENS/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("MaSV,HoTen,NgaySinh,GioiTinh,Lop,Email,DiemTrungBinh")] SinhVien sinhvien)
-    {
-        if (ModelState.IsValid)
+        // =====================================================
+        // CHI TIẾT SINH VIÊN
+        // =====================================================
+        public async Task<IActionResult> Details(int? id)
         {
-            _context.Add(sinhvien);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-        return View(sinhvien);
-    }
-
-    // GET: SINHVIENS/Edit/5
-    public async Task<IActionResult> Edit(int? masv)
-    {
-        if (masv == null)
-        {
-            return NotFound();
-        }
-
-        var sinhvien = await _context.SinhViens.FindAsync(masv);
-        if (sinhvien == null)
-        {
-            return NotFound();
-        }
-        return View(sinhvien);
-    }
-
-    // POST: SINHVIENS/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int? masv, [Bind("MaSV,HoTen,NgaySinh,GioiTinh,Lop,Email,DiemTrungBinh")] SinhVien sinhvien)
-    {
-        if (masv != sinhvien.MaSV)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
+            if (id == null)
             {
-                _context.Update(sinhvien);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+
+            var sinhVien = await _context.SinhViens
+                .FirstOrDefaultAsync(s => s.MaSV == id);
+
+            if (sinhVien == null)
             {
-                if (!SinhVienExists(sinhvien.MaSV))
+                return NotFound();
+            }
+
+            return View(sinhVien);
+        }
+
+        // =====================================================
+        // THÊM - GET
+        // =====================================================
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // =====================================================
+        // THÊM - POST + UPLOAD ẢNH
+        // =====================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(
+            SinhVien sinhVien,
+            IFormFile? imageFile)
+        {
+            // Kiểm tra file nếu người dùng chọn ảnh
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                string extension = Path
+                    .GetExtension(imageFile.FileName)
+                    .ToLowerInvariant();
+
+                string[] allowedExtensions =
                 {
-                    return NotFound();
+                    ".jpg",
+                    ".jpeg",
+                    ".png"
+                };
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        "HinhAnh",
+                        "Chỉ được upload file JPG, JPEG hoặc PNG."
+                    );
                 }
-                else
+            }
+
+            if (ModelState.IsValid)
+            {
+                if (imageFile != null && imageFile.Length > 0)
                 {
+                    string extension = Path
+                        .GetExtension(imageFile.FileName)
+                        .ToLowerInvariant();
+
+                    // Tạo tên file mới để tránh trùng
+                    string fileName =
+                        Guid.NewGuid().ToString() + extension;
+
+                    // wwwroot/images/students
+                    string folderPath = Path.Combine(
+                        _webHostEnvironment.WebRootPath,
+                        "images",
+                        "students"
+                    );
+
+                    // Tự tạo thư mục nếu chưa có
+                    Directory.CreateDirectory(folderPath);
+
+                    string filePath = Path.Combine(
+                        folderPath,
+                        fileName
+                    );
+
+                    // Lưu ảnh
+                    using (var stream =
+                           new FileStream(filePath, FileMode.Create))
+                    {
+                        await imageFile.CopyToAsync(stream);
+                    }
+
+                    // Chỉ lưu tên ảnh vào database
+                    sinhVien.HinhAnh = fileName;
+                }
+
+                _context.SinhViens.Add(sinhVien);
+
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(sinhVien);
+        }
+
+        // =====================================================
+        // SỬA - GET
+        // =====================================================
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sinhVien =
+                await _context.SinhViens.FindAsync(id);
+
+            if (sinhVien == null)
+            {
+                return NotFound();
+            }
+
+            return View(sinhVien);
+        }
+
+        // =====================================================
+        // SỬA - POST
+        // =====================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            int id,
+            SinhVien sinhVien,
+            IFormFile? imageFile)
+        {
+            if (id != sinhVien.MaSV)
+            {
+                return NotFound();
+            }
+
+            // Lấy thông tin cũ nhưng không Tracking
+            var sinhVienCu = await _context.SinhViens
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.MaSV == id);
+
+            if (sinhVienCu == null)
+            {
+                return NotFound();
+            }
+
+            // Kiểm tra ảnh mới
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                string extension = Path
+                    .GetExtension(imageFile.FileName)
+                    .ToLowerInvariant();
+
+                string[] allowedExtensions =
+                {
+                    ".jpg",
+                    ".jpeg",
+                    ".png"
+                };
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        "HinhAnh",
+                        "Chỉ được upload file JPG, JPEG hoặc PNG."
+                    );
+                }
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Nếu có chọn ảnh mới
+                    if (imageFile != null &&
+                        imageFile.Length > 0)
+                    {
+                        string extension = Path
+                            .GetExtension(imageFile.FileName)
+                            .ToLowerInvariant();
+
+                        string fileName =
+                            Guid.NewGuid().ToString()
+                            + extension;
+
+                        string folderPath = Path.Combine(
+                            _webHostEnvironment.WebRootPath,
+                            "images",
+                            "students"
+                        );
+
+                        Directory.CreateDirectory(folderPath);
+
+                        string filePath =
+                            Path.Combine(
+                                folderPath,
+                                fileName
+                            );
+
+                        // Lưu ảnh mới
+                        using (var stream =
+                               new FileStream(
+                                   filePath,
+                                   FileMode.Create))
+                        {
+                            await imageFile.CopyToAsync(stream);
+                        }
+
+                        // Xóa ảnh cũ
+                        if (!string.IsNullOrEmpty(
+                                sinhVienCu.HinhAnh))
+                        {
+                            string oldImagePath =
+                                Path.Combine(
+                                    folderPath,
+                                    sinhVienCu.HinhAnh
+                                );
+
+                            if (System.IO.File.Exists(
+                                    oldImagePath))
+                            {
+                                System.IO.File.Delete(
+                                    oldImagePath
+                                );
+                            }
+                        }
+
+                        sinhVien.HinhAnh = fileName;
+                    }
+                    else
+                    {
+                        // Không chọn ảnh mới thì giữ ảnh cũ
+                        sinhVien.HinhAnh =
+                            sinhVienCu.HinhAnh;
+                    }
+
+                    _context.Update(sinhVien);
+
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!SinhVienExists(sinhVien.MaSV))
+                    {
+                        return NotFound();
+                    }
+
                     throw;
                 }
+
+                return RedirectToAction(nameof(Index));
             }
+
+            // Validation lỗi thì vẫn giữ ảnh cũ
+            sinhVien.HinhAnh = sinhVienCu.HinhAnh;
+
+            return View(sinhVien);
+        }
+
+        // =====================================================
+        // XÓA - GET
+        // =====================================================
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sinhVien = await _context.SinhViens
+                .FirstOrDefaultAsync(s => s.MaSV == id);
+
+            if (sinhVien == null)
+            {
+                return NotFound();
+            }
+
+            return View(sinhVien);
+        }
+
+        // =====================================================
+        // XÓA - POST
+        // =====================================================
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var sinhVien =
+                await _context.SinhViens.FindAsync(id);
+
+            if (sinhVien != null)
+            {
+                // Xóa file ảnh nếu có
+                if (!string.IsNullOrEmpty(sinhVien.HinhAnh))
+                {
+                    string imagePath = Path.Combine(
+                        _webHostEnvironment.WebRootPath,
+                        "images",
+                        "students",
+                        sinhVien.HinhAnh
+                    );
+
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                    }
+                }
+
+                // Xóa dữ liệu database
+                _context.SinhViens.Remove(sinhVien);
+
+                await _context.SaveChangesAsync();
+            }
+
             return RedirectToAction(nameof(Index));
         }
-        return View(sinhvien);
-    }
 
-    // GET: SINHVIENS/Delete/5
-    public async Task<IActionResult> Delete(int? masv)
-    {
-        if (masv == null)
+        private bool SinhVienExists(int id)
         {
-            return NotFound();
+            return _context.SinhViens
+                .Any(s => s.MaSV == id);
         }
-
-        var sinhvien = await _context.SinhViens
-            .FirstOrDefaultAsync(m => m.MaSV == masv);
-        if (sinhvien == null)
-        {
-            return NotFound();
-        }
-
-        return View(sinhvien);
-    }
-
-    // POST: SINHVIENS/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int? masv)
-    {
-        var sinhvien = await _context.SinhViens.FindAsync(masv);
-        if (sinhvien != null)
-        {
-            _context.SinhViens.Remove(sinhvien);
-        }
-
-        await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-    }
-
-    private bool SinhVienExists(int? masv)
-    {
-        return _context.SinhViens.Any(e => e.MaSV == masv);
     }
 }

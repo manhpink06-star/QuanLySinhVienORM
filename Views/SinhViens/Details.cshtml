@@ -1,59 +1,86 @@
 @model QuanLySinhVienORM.Models.SinhVien
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Chi tiết sinh viên";
 }
 
-<h1>Details</h1>
+<div class="container mt-4">
 
-<div>
-    <h4>SinhVien</h4>
+    <h2>CHI TIẾT SINH VIÊN</h2>
+
     <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.HoTen)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.HoTen)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.NgaySinh)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.NgaySinh)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.GioiTinh)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.GioiTinh)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Lop)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Lop)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DiemTrungBinh)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DiemTrungBinh)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.MaSV">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+
+
+    <div class="mb-3">
+
+        @if (!string.IsNullOrEmpty(Model.HinhAnh))
+        {
+            <img src="~/images/students/@Model.HinhAnh"
+                 width="180"
+                 height="180"
+                 style="object-fit:cover;"
+                 class="rounded border"
+                 alt="@Model.HoTen" />
+        }
+        else
+        {
+            <p>Chưa có ảnh</p>
+        }
+
+    </div>
+
+
+    <table class="table table-bordered">
+
+        <tr>
+            <th>Mã sinh viên</th>
+            <td>@Model.MaSV</td>
+        </tr>
+
+        <tr>
+            <th>Họ tên</th>
+            <td>@Model.HoTen</td>
+        </tr>
+
+        <tr>
+            <th>Ngày sinh</th>
+            <td>
+                @Model.NgaySinh.ToString("dd/MM/yyyy")
+            </td>
+        </tr>
+
+        <tr>
+            <th>Giới tính</th>
+            <td>@Model.GioiTinh</td>
+        </tr>
+
+        <tr>
+            <th>Lớp</th>
+            <td>@Model.Lop</td>
+        </tr>
+
+        <tr>
+            <th>Email</th>
+            <td>@Model.Email</td>
+        </tr>
+
+        <tr>
+            <th>Điểm trung bình</th>
+            <td>@Model.DiemTrungBinh</td>
+        </tr>
+
+    </table>
+
+
+    <a asp-action="Edit"
+       asp-route-id="@Model.MaSV"
+       class="btn btn-warning">
+        Sửa
+    </a>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Quay lại
+    </a>
+
 </div>
